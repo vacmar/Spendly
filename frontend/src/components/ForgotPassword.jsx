@@ -26,7 +26,12 @@ const ForgotPassword = ({ onBack }) => {
         setResetLink(response.resetLink);
       }
     } catch (err) {
-      setError(err.message || 'Failed to send reset email');
+      // Check if it's a Google account
+      if (err.response?.data?.isGoogleAccount) {
+        setError('This account uses Google Sign-In. Please use the "Sign in with Google" button instead.');
+      } else {
+        setError(err.message || 'Failed to send reset email');
+      }
     } finally {
       setIsSubmitting(false);
     }

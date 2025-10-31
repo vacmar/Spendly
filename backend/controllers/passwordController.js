@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { sendPasswordResetEmail } = require('../utils/emailService');
 
 // In-memory storage for reset tokens (in production, use Redis or database)
 const resetTokens = new Map();
@@ -23,6 +24,14 @@ exports.forgotPassword = async (req, res) => {
       });
     }
 
+    // Check if user signed up with Google
+    if (user.googleId) {
+      return res.status(400).json({ 
+        message: 'This account uses Google Sign-In. Please sign in with Google instead.',
+        isGoogleAccount: true
+      });
+    }
+
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenExpiry = Date.now() + 3600000; // 1 hour from now
@@ -34,17 +43,24 @@ exports.forgotPassword = async (req, res) => {
       expiry: resetTokenExpiry
     });
 
-    // In production, send email here with reset link
-    // For now, we'll return the token in response (remove in production)
-    const resetLink = `http://localhost:5173/reset-password/${resetToken}`;
+    const resetLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
 
-    console.log('Password reset link:', resetLink);
+    // Try to send email
+    try {
+      await sendPasswordResetEmail(email, resetToken, user.name);
+      console.log('✅ Password reset email sent to:', email);
+    } catch (emailError) {
+      console.error('❌ Failed to send email:', emailError.message);
+      // Continue anyway - in development mode we show the link
+    }
+
+    console.log('🔗 Password reset link:', resetLink);
 
     res.json({
       message: 'If an account with that email exists, a password reset link has been sent.',
       // Remove this in production - only for development
-      resetLink: resetLink,
-      resetToken: resetToken
+      resetLink: process.env.NODE_ENV === 'development' ? resetLink : undefined,
+      resetToken: process.env.NODE_ENV === 'development' ? resetToken : undefined
     });
 
   } catch (error) {
@@ -89,14 +105,15 @@ exports.resetPassword = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
+    // Set new password (will be hashed by User model's pre-save hook)
+    user.password = newPassword;
     
     await user.save();
 
     // Delete used token
     resetTokens.delete(token);
+
+    console.log('✅ Password reset successfully for user:', user.email);
 
     res.json({ message: 'Password has been reset successfully' });
 
