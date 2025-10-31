@@ -1,0 +1,23 @@
+[
+  {
+    "id": "1",
+    "name": "John Doe",
+    "email": "demo@spendly.com",
+    "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+    "createdAt": "2025-09-16T16:13:26.592Z"
+  },
+  {
+    "id": "2",
+    "name": "Jane Smith",
+    "email": "test@test.com",
+    "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+    "createdAt": "2025-09-16T16:13:26.592Z"
+  },
+  {
+    "name": "Vaaheesan S",
+    "email": "vaahee21@gmail.com",
+    "password": "$2a$10$U.hKStnFlKzRoXcLmp4mQeTBNKZgrHmGtwc.p0H5Dpo81PxIfMc4O",
+    "id": "1758643659833",
+    "createdAt": "2025-09-23T16:07:39.833Z"
+  }
+]

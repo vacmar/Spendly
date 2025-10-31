@@ -1,41 +1,59 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoadingScreen from './components/LoadingScreen';
+import AuthForm from './components/AuthForm';
 import Header from './components/Header';
 import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import Dashboard from './components/Dashboard';
 import BudgetTracker from './components/BudgetTracker';
 
-function App() {
+function AppContent() {
   const [expenses, setExpenses] = useState([]);
   const [budgets, setBudgets] = useState({});
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
+  
+  const { user, loading: authLoading } = useAuth();
 
   // Load data from localStorage on component mount
   useEffect(() => {
-    const savedExpenses = localStorage.getItem('spendly-expenses');
-    const savedBudgets = localStorage.getItem('spendly-budgets');
-    
-    if (savedExpenses) {
-      setExpenses(JSON.parse(savedExpenses));
-    }
-    
-    if (savedBudgets) {
-      setBudgets(JSON.parse(savedBudgets));
-    }
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      const savedExpenses = localStorage.getItem(`spendly-expenses-${user.id}`);
+      const savedBudgets = localStorage.getItem(`spendly-budgets-${user.id}`);
+      
+      if (savedExpenses) {
+        setExpenses(JSON.parse(savedExpenses));
+      }
+      
+      if (savedBudgets) {
+        setBudgets(JSON.parse(savedBudgets));
+      }
+    }
+  }, [user]);
 
   // Save expenses to localStorage whenever expenses change
   useEffect(() => {
-    localStorage.setItem('spendly-expenses', JSON.stringify(expenses));
-  }, [expenses]);
+    if (user) {
+      localStorage.setItem(`spendly-expenses-${user.id}`, JSON.stringify(expenses));
+    }
+  }, [expenses, user]);
 
   // Save budgets to localStorage whenever budgets change
   useEffect(() => {
-    localStorage.setItem('spendly-budgets', JSON.stringify(budgets));
-  }, [budgets]);
+    if (user) {
+      localStorage.setItem(`spendly-budgets-${user.id}`, JSON.stringify(budgets));
+    }
+  }, [budgets, user]);
 
   const addExpense = (expense) => {
     const newExpense = {
@@ -61,8 +79,12 @@ function App() {
     setIsLoading(false);
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return <LoadingScreen onLoadingComplete={handleLoadingComplete} />;
+  }
+
+  if (!user) {
+    return <AuthForm />;
   }
 
   return (
@@ -95,7 +117,7 @@ function App() {
               <motion.button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-all duration-300 ${
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-all duration-300 cursor-pointer ${
                   activeTab === tab.id
                     ? 'border-purple-500 text-purple-600 bg-purple-50 rounded-t-lg'
                     : 'border-transparent text-gray-500 hover:text-purple-600 hover:border-purple-300'
@@ -176,6 +198,14 @@ function App() {
         </AnimatePresence>
       </motion.div>
     </motion.div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
