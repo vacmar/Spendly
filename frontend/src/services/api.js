@@ -109,6 +109,35 @@ class ApiService {
     localStorage.removeItem('spendly-budgets');
   }
 
+  // Password reset methods
+  async forgotPassword(email) {
+    return this.request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(token, newPassword) {
+    return this.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    });
+  }
+
+  // Google Sign In
+  async googleSignIn(credential) {
+    const data = await this.request('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ credential }),
+    });
+    
+    if (data.token) {
+      this.setToken(data.token);
+    }
+    
+    return data;
+  }
+
   // Expense methods
   async getExpenses(params = {}) {
     const queryString = new URLSearchParams(params).toString();

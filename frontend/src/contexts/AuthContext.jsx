@@ -84,6 +84,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const googleSignIn = async (credential) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await apiService.googleSignIn(credential);
+      setUser(response.user);
+      return response;
+    } catch (error) {
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -92,6 +107,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateProfile,
+    googleSignIn,
     isAuthenticated: !!user,
   };
 

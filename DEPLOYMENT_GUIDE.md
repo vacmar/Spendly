@@ -105,8 +105,8 @@ After deployment, go to Vercel dashboard:
 2. Go to "Settings" → "Environment Variables"
 3. Add:
    ```
-   MONGODB_URI = mongodb+srv://vaahee21_db_user:zDhv25LWanaAIrBt@spendly-production.3udxmch.mongodb.net/spendly?retryWrites=true&w=majority
-   JWT_SECRET = spendly_super_secret_jwt_key_2025_production_v1_secure_random_string
+   MONGODB_URI = your-mongodb-connection-string-here
+   JWT_SECRET = your-jwt-secret-here
    JWT_EXPIRES_IN = 30d
    NODE_ENV = production
    ```
