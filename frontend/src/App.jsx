@@ -193,26 +193,25 @@ function AppContent() {
       animate={{ opacity: 1 }}
       transition={{ duration: 1 }}
     >
-      <Header />
+      <Header onProfileClick={() => setActiveTab('profile')} />
       
-      {/* Navigation Tabs */}
-      <motion.div 
-        className="bg-white bg-opacity-80 backdrop-blur-sm shadow-lg border-b border-purple-100"
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            {[
-              { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-              { id: 'add-expense', label: 'Add Expense', icon: '➕' },
-              { id: 'expenses', label: 'All Expenses', icon: '📋' },
-              { id: 'budget', label: 'Budget Tracker', icon: '🎯' },
-              { id: 'analytics', label: 'Analytics', icon: '📈' },
-              { id: 'profile', label: 'Profile', icon: '👤' },
-              { id: 'settings', label: 'Settings', icon: '⚙️' }
-            ].map((tab, index) => (
+      {/* Navigation Tabs - hide when on profile */}
+      {activeTab !== 'profile' && (
+        <motion.div 
+          className="bg-white bg-opacity-80 backdrop-blur-sm shadow-lg border-b border-purple-100"
+          initial={{ y: -100 }}
+          animate={{ y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex space-x-8">
+              {[
+                { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+                { id: 'add-expense', label: 'Add Expense', icon: '➕' },
+                { id: 'expenses', label: 'All Expenses', icon: '📋' },
+                { id: 'budget', label: 'Budget Tracker', icon: '🎯' },
+                { id: 'analytics', label: 'Analytics', icon: '📈' }
+              ].map((tab, index) => (
               <motion.button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
@@ -234,6 +233,7 @@ function AppContent() {
           </div>
         </div>
       </motion.div>
+      )}
 
       {/* Main Content */}
       <motion.div 
@@ -330,19 +330,11 @@ function AppContent() {
               exit={{ opacity: 0, x: 100 }}
               transition={{ duration: 0.5 }}
             >
-              <Profile />
-            </motion.div>
-          )}
-          
-          {activeTab === 'settings' && (
-            <motion.div
-              key="settings"
-              initial={{ opacity: 0, x: -100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 100 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Settings />
+              <Profile 
+                expenses={expenses}
+                budgets={budgets}
+                onNavigate={setActiveTab}
+              />
             </motion.div>
           )}
         </AnimatePresence>

@@ -1,19 +1,17 @@
-import { useState, useEffect } from 'react';
-import { User, Mail, Calendar, Edit2, Save, X, Camera } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { User, Mail, Calendar, ArrowLeft, Receipt, Target, DollarSign, Settings as SettingsIcon, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import Spinner from './Spinner';
+import Settings from './Settings';
+import { useAuth } from '../contexts/AuthContext';
 
-const Profile = () => {
+const Profile = ({ expenses, budgets, onNavigate }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [editForm, setEditForm] = useState({
-    name: '',
-    email: ''
-  });
+  const [activeView, setActiveView] = useState('profile'); // 'profile' or 'settings'
+  const { logout } = useAuth();
 
   useEffect(() => {
     fetchUserProfile();
@@ -22,12 +20,10 @@ const Profile = () => {
   const fetchUserProfile = async () => {
     try {
       setIsLoading(true);
-      const userData = await api.getCurrentUser();
+      const response = await api.getCurrentUser();
+      // Handle both response formats
+      const userData = response.user || response;
       setUser(userData);
-      setEditForm({
-        name: userData.name,
-        email: userData.email
-      });
     } catch (error) {
       toast.error('Failed to load profile');
       console.error('Error fetching profile:', error);
@@ -36,46 +32,27 @@ const Profile = () => {
     }
   };
 
-  const handleEditClick = () => {
-    setIsEditing(true);
-    setEditForm({
-      name: user.name,
-      email: user.email
-    });
-  };
+  // Calculate statistics from expenses and budgets
+  const stats = useMemo(() => {
+    const totalExpenses = expenses.length;
+    const activeBudgets = Object.keys(budgets).length;
+    
+    // Calculate this month's spending
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const monthlyTotal = expenses
+      .filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
+      })
+      .reduce((sum, expense) => sum + expense.amount, 0);
 
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setEditForm({
-      name: user.name,
-      email: user.email
-    });
-  };
-
-  const handleSaveEdit = async () => {
-    try {
-      setIsSaving(true);
-      const updatedUser = await api.updateProfile({
-        name: editForm.name,
-        email: editForm.email
-      });
-      setUser(updatedUser);
-      setIsEditing(false);
-      toast.success('Profile updated successfully!');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update profile');
-      console.error('Error updating profile:', error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    setEditForm({
-      ...editForm,
-      [e.target.name]: e.target.value
-    });
-  };
+    return {
+      totalExpenses,
+      activeBudgets,
+      monthlyTotal
+    };
+  }, [expenses, budgets]);
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -91,6 +68,11 @@ const Profile = () => {
         <Spinner />
       </div>
     );
+  }
+
+  // Render Settings if activeView is 'settings'
+  if (activeView === 'settings') {
+    return <Settings onBack={() => setActiveView('profile')} />;
   }
 
   return (
@@ -114,67 +96,61 @@ const Profile = () => {
                 </span>
               </div>
             </div>
-            <button
-              className="absolute bottom-0 right-0 bg-purple-600 text-white p-2 rounded-full shadow-lg hover:bg-purple-700 transition-colors"
-              title="Change profile picture"
-            >
-              <Camera className="w-5 h-5" />
-            </button>
           </div>
 
-          {/* Edit Button */}
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">My Profile</h1>
-              <p className="text-gray-600">Manage your account information</p>
-            </div>
-            {!isEditing ? (
-              <motion.button
-                onClick={handleEditClick}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+          {/* Navigation Tabs */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex gap-4 border-b border-gray-200">
+              <button
+                onClick={() => setActiveView('profile')}
+                className={`pb-3 px-4 font-medium transition-colors ${
+                  activeView === 'profile'
+                    ? 'text-purple-600 border-b-2 border-purple-600'
+                    : 'text-gray-600 hover:text-purple-600'
+                }`}
               >
-                <Edit2 className="w-4 h-4" />
-                Edit Profile
-              </motion.button>
-            ) : (
-              <div className="flex gap-2">
-                <motion.button
-                  onClick={handleCancelEdit}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  disabled={isSaving}
-                >
-                  <X className="w-4 h-4" />
-                  Cancel
-                </motion.button>
-                <motion.button
-                  onClick={handleSaveEdit}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <>
-                      <Spinner size="small" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      Save Changes
-                    </>
-                  )}
-                </motion.button>
-              </div>
-            )}
+                <User className="w-4 h-4 inline mr-2" />
+                My Profile
+              </button>
+              <button
+                onClick={() => setActiveView('settings')}
+                className={`pb-3 px-4 font-medium transition-colors ${
+                  activeView === 'settings'
+                    ? 'text-purple-600 border-b-2 border-purple-600'
+                    : 'text-gray-600 hover:text-purple-600'
+                }`}
+              >
+                <SettingsIcon className="w-4 h-4 inline mr-2" />
+                Settings
+              </button>
+              <button
+                onClick={logout}
+                className="pb-3 px-4 font-medium text-red-600 hover:text-red-700 transition-colors"
+              >
+                <LogOut className="w-4 h-4 inline mr-2" />
+                Logout
+              </button>
+            </div>
+            
+            {/* Back Button */}
+            <motion.button
+              onClick={() => onNavigate('dashboard')}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Dashboard
+            </motion.button>
+          </div>
+
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">My Profile</h1>
+            <p className="text-gray-600">View your account information and statistics</p>
           </div>
 
           {/* Profile Information */}
-          <div className="space-y-6">
+          <div className="space-y-6 mt-6">
             {/* Name */}
             <div className="flex items-start gap-4">
               <div className="p-3 bg-purple-100 rounded-lg">
@@ -184,18 +160,7 @@ const Profile = () => {
                 <label className="block text-sm font-medium text-gray-600 mb-1">
                   Full Name
                 </label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    name="name"
-                    value={editForm.name}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="Enter your name"
-                  />
-                ) : (
-                  <p className="text-lg font-semibold text-gray-800">{user?.name}</p>
-                )}
+                <p className="text-lg font-semibold text-gray-800">{user?.name}</p>
               </div>
             </div>
 
@@ -208,18 +173,7 @@ const Profile = () => {
                 <label className="block text-sm font-medium text-gray-600 mb-1">
                   Email Address
                 </label>
-                {isEditing ? (
-                  <input
-                    type="email"
-                    name="email"
-                    value={editForm.email}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="Enter your email"
-                  />
-                ) : (
-                  <p className="text-lg font-semibold text-gray-800">{user?.email}</p>
-                )}
+                <p className="text-lg font-semibold text-gray-800">{user?.email}</p>
               </div>
             </div>
 
@@ -241,20 +195,49 @@ const Profile = () => {
 
           {/* Statistics Section */}
           <div className="mt-8 pt-8 border-t border-gray-200">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Account Statistics</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+              <Receipt className="w-5 h-5 mr-2 text-purple-600" />
+              Account Statistics
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-purple-50 p-4 rounded-lg">
-                <p className="text-sm text-purple-600 font-medium mb-1">Total Expenses</p>
-                <p className="text-2xl font-bold text-purple-700">-</p>
-              </div>
-              <div className="bg-purple-50 p-4 rounded-lg">
-                <p className="text-sm text-purple-600 font-medium mb-1">Active Budgets</p>
-                <p className="text-2xl font-bold text-purple-700">-</p>
-              </div>
-              <div className="bg-purple-50 p-4 rounded-lg">
-                <p className="text-sm text-purple-600 font-medium mb-1">This Month</p>
-                <p className="text-2xl font-bold text-purple-700">$0.00</p>
-              </div>
+              <motion.div 
+                className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl shadow-md border border-purple-200"
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-purple-600 font-medium">Total Expenses</p>
+                  <Receipt className="w-5 h-5 text-purple-600" />
+                </div>
+                <p className="text-3xl font-bold text-purple-700">{stats.totalExpenses}</p>
+                <p className="text-xs text-purple-500 mt-1">All time transactions</p>
+              </motion.div>
+              
+              <motion.div 
+                className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl shadow-md border border-purple-200"
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-purple-600 font-medium">Active Budgets</p>
+                  <Target className="w-5 h-5 text-purple-600" />
+                </div>
+                <p className="text-3xl font-bold text-purple-700">{stats.activeBudgets}</p>
+                <p className="text-xs text-purple-500 mt-1">Categories tracked</p>
+              </motion.div>
+              
+              <motion.div 
+                className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl shadow-md border border-purple-200"
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-purple-600 font-medium">This Month</p>
+                  <DollarSign className="w-5 h-5 text-purple-600" />
+                </div>
+                <p className="text-3xl font-bold text-purple-700">${stats.monthlyTotal.toFixed(2)}</p>
+                <p className="text-xs text-purple-500 mt-1">Current month spending</p>
+              </motion.div>
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Pencil, Trash2, X, Check, Search } from 'lucide-react';
+import { Pencil, Trash2, X, Check, Search, Download } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
 import toast from 'react-hot-toast';
 import SkeletonLoader from './SkeletonLoader';
@@ -57,6 +57,39 @@ const ExpenseList = ({ expenses, onDeleteExpense, onUpdateExpense, isLoading }) 
       description: '',
       date: ''
     });
+  };
+
+  const handleExportCSV = () => {
+    if (filteredAndSortedExpenses.length === 0) {
+      toast.error('No expenses to export');
+      return;
+    }
+
+    // Create CSV content
+    const headers = ['Date', 'Title', 'Category', 'Amount', 'Description'];
+    const csvContent = [
+      headers.join(','),
+      ...filteredAndSortedExpenses.map(expense => [
+        new Date(expense.date).toLocaleDateString(),
+        `"${expense.title}"`,
+        `"${expense.category}"`,
+        expense.amount.toFixed(2),
+        `"${expense.description || ''}"`
+      ].join(','))
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `expenses_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('Expenses exported successfully!');
   };
 
   const handleSaveEdit = async (id) => {
@@ -195,10 +228,19 @@ const ExpenseList = ({ expenses, onDeleteExpense, onUpdateExpense, isLoading }) 
       <div className="bg-white shadow-lg rounded-lg p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">All Expenses</h2>
-          <div className="bg-purple-100 px-4 py-2 rounded-lg">
-            <p className="text-purple-800 font-semibold">
-              Total: ${totalAmount.toFixed(2)}
-            </p>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </button>
+            <div className="bg-purple-100 px-4 py-2 rounded-lg">
+              <p className="text-purple-800 font-semibold">
+                Total: ${totalAmount.toFixed(2)}
+              </p>
+            </div>
           </div>
         </div>
 

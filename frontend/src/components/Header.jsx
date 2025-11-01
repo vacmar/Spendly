@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion';
-import { User, Sparkles, LogOut } from 'lucide-react';
+import { User, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-const Header = () => {
-  const { user, logout } = useAuth();
+const Header = ({ onProfileClick }) => {
+  const { user } = useAuth();
 
   return (
     <motion.header 
@@ -126,6 +126,7 @@ const Header = () => {
               className="relative cursor-pointer"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
+              onClick={onProfileClick}
             >
               <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white border-opacity-20">
                 <User className="w-6 h-6 text-white" />
@@ -147,19 +148,6 @@ const Header = () => {
                 <Sparkles className="w-4 h-4 text-yellow-300" />
               </motion.div>
             </motion.div>
-
-            <motion.button
-              onClick={logout}
-              className="flex items-center space-x-2 px-4 py-2 bg-white bg-opacity-20 rounded-lg backdrop-blur-sm border border-white border-opacity-20 text-purple-700 hover:bg-white hover:bg-opacity-30 hover:text-purple-700 transition-all duration-300 font-medium cursor-pointer"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 1.2 }}
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Logout</span>
-            </motion.button>
           </motion.div>
         </div>
       </div>
