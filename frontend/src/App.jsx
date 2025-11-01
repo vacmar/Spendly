@@ -12,6 +12,7 @@ import ExpenseForm from './components/ExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import Dashboard from './components/Dashboard';
 import BudgetTracker from './components/BudgetTracker';
+import Analytics from './components/Analytics';
 
 function AppContent() {
   const [expenses, setExpenses] = useState([]);
@@ -198,7 +199,8 @@ function AppContent() {
               { id: 'dashboard', label: 'Dashboard', icon: '📊' },
               { id: 'add-expense', label: 'Add Expense', icon: '➕' },
               { id: 'expenses', label: 'All Expenses', icon: '📋' },
-              { id: 'budget', label: 'Budget Tracker', icon: '🎯' }
+              { id: 'budget', label: 'Budget Tracker', icon: '🎯' },
+              { id: 'analytics', label: 'Analytics', icon: '📈' }
             ].map((tab, index) => (
               <motion.button
                 key={tab.id}
@@ -294,6 +296,18 @@ function AppContent() {
                 isLoading={isLoadingBudgets}
                 isUpdating={isUpdatingBudget}
               />
+            </motion.div>
+          )}
+          
+          {activeTab === 'analytics' && (
+            <motion.div
+              key="analytics"
+              initial={{ opacity: 0, x: -100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 100 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Analytics expenses={expenses} />
             </motion.div>
           )}
         </AnimatePresence>
