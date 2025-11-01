@@ -41,6 +41,7 @@ function AppContent() {
   // Fetch expenses from backend when user logs in
   useEffect(() => {
     if (user) {
+      setActiveTab('dashboard'); // Always start on dashboard when user logs in
       fetchExpenses();
       fetchBudgets();
     }
