@@ -111,18 +111,19 @@ const Analytics = ({ expenses }) => {
         </h2>
       </motion.div>
 
-      {/* Category Breakdown - Pie Chart */}
-      <motion.div
-        className="bg-white rounded-lg shadow-lg p-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-      >
-        <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-          <PieChartIcon className="w-6 h-6 mr-2 text-purple-600" />
-          Spending by Category
-        </h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Two Column Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Category Breakdown - Pie Chart */}
+        <motion.div
+          className="bg-white rounded-lg shadow-lg p-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        >
+          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+            <PieChartIcon className="w-6 h-6 mr-2 text-purple-600" />
+            Spending by Category
+          </h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -144,144 +145,140 @@ const Analytics = ({ expenses }) => {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex flex-col justify-center">
-            <div className="space-y-3">
-              {analyticsData.categoryData.slice(0, 5).map((category, index) => (
-                <motion.div
-                  key={category.name}
-                  className="flex items-center justify-between p-3 bg-purple-50 rounded-lg"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 * index }}
-                >
-                  <div className="flex items-center">
-                    <div
-                      className="w-4 h-4 rounded-full mr-3"
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                    ></div>
-                    <span className="font-medium text-gray-700">{category.name}</span>
-                  </div>
-                  <span className="font-bold text-purple-600">${category.value.toFixed(2)}</span>
-                </motion.div>
-              ))}
-            </div>
+          {/* Category Legend */}
+          <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
+            {analyticsData.categoryData.slice(0, 5).map((category, index) => (
+              <div
+                key={category.name}
+                className="flex items-center justify-between p-2 bg-purple-50 rounded-lg text-sm"
+              >
+                <div className="flex items-center">
+                  <div
+                    className="w-3 h-3 rounded-full mr-2"
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                  ></div>
+                  <span className="font-medium text-gray-700">{category.name}</span>
+                </div>
+                <span className="font-bold text-purple-600">${category.value.toFixed(2)}</span>
+              </div>
+            ))}
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
 
-      {/* Monthly Trend - Area Chart */}
-      <motion.div
-        className="bg-white rounded-lg shadow-lg p-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-      >
-        <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-          <TrendingUp className="w-6 h-6 mr-2 text-purple-600" />
-          Monthly Spending Trend
-        </h3>
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={analyticsData.monthlyData}>
-              <defs>
-                <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="month" stroke="#6b7280" />
-              <YAxis stroke="#6b7280" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'white',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="amount"
-                stroke="#8b5cf6"
-                strokeWidth={3}
-                fillOpacity={1}
-                fill="url(#colorAmount)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </motion.div>
+        {/* Monthly Trend - Area Chart */}
+        <motion.div
+          className="bg-white rounded-lg shadow-lg p-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+            <TrendingUp className="w-6 h-6 mr-2 text-purple-600" />
+            Monthly Spending Trend
+          </h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={analyticsData.monthlyData}>
+                <defs>
+                  <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="month" stroke="#6b7280" />
+                <YAxis stroke="#6b7280" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'white',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="amount"
+                  stroke="#8b5cf6"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorAmount)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
 
-      {/* Top Categories - Bar Chart */}
-      <motion.div
-        className="bg-white rounded-lg shadow-lg p-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-      >
-        <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-          <BarChart3 className="w-6 h-6 mr-2 text-purple-600" />
-          Top 5 Spending Categories
-        </h3>
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={analyticsData.topCategories}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="name" stroke="#6b7280" />
-              <YAxis stroke="#6b7280" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'white',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-                }}
-              />
-              <Bar dataKey="value" fill="#8b5cf6" radius={[8, 8, 0, 0]}>
-                {analyticsData.topCategories.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </motion.div>
+        {/* Top Categories - Bar Chart */}
+        <motion.div
+          className="bg-white rounded-lg shadow-lg p-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+            <BarChart3 className="w-6 h-6 mr-2 text-purple-600" />
+            Top 5 Spending Categories
+          </h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={analyticsData.topCategories}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="name" stroke="#6b7280" />
+                <YAxis stroke="#6b7280" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'white',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                <Bar dataKey="value" fill="#8b5cf6" radius={[8, 8, 0, 0]}>
+                  {analyticsData.topCategories.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
 
-      {/* Weekly Comparison - Line Chart */}
-      <motion.div
-        className="bg-white rounded-lg shadow-lg p-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-      >
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">Weekly Spending Comparison</h3>
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={analyticsData.weeklyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="week" stroke="#6b7280" />
-              <YAxis stroke="#6b7280" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'white',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-                }}
-              />
-              <Line
-                type="monotone"
-                dataKey="amount"
-                stroke="#8b5cf6"
-                strokeWidth={3}
-                dot={{ fill: '#8b5cf6', r: 6 }}
-                activeDot={{ r: 8 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </motion.div>
+        {/* Weekly Comparison - Line Chart */}
+        <motion.div
+          className="bg-white rounded-lg shadow-lg p-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">Weekly Spending Comparison</h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={analyticsData.weeklyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="week" stroke="#6b7280" />
+                <YAxis stroke="#6b7280" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'white',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="amount"
+                  stroke="#8b5cf6"
+                  strokeWidth={3}
+                  dot={{ fill: '#8b5cf6', r: 6 }}
+                  activeDot={{ r: 8 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };
