@@ -105,64 +105,71 @@ Spinner and SkeletonLoader components created!
 
 ## ⭐ Phase 2: Essential Features
 
-### 6. Add Date Range Filter
-**Status:** Not Started  
+### 6. Add Date Range Filter ✅ COMPLETED
+**Status:** ✅ Completed  
 **Priority:** P2 (Medium)  
-**Effort:** 2-3 hours
+**Effort:** 2-3 hours  
+**Completed:** November 1, 2025
 
-Filter expenses by date range (this month, last month, custom range).
+Filter expenses by date range (this month, last month, custom range, etc.)
 
 **Tasks:**
-- [ ] Create DateRangePicker component
-- [ ] Add filter logic in ExpenseList
-- [ ] Update API to support date queries
+- [x] Create DateRangePicker component
+- [x] Add filter logic in ExpenseList
+- [x] Added preset ranges: All Time, Today, Last 7 Days, This Month, Last Month, Last 30 Days, Custom
 
 ---
 
-### 7. Add Search Expenses
-**Status:** Not Started  
+### 7. Add Search Expenses ✅ COMPLETED
+**Status:** ✅ Completed  
 **Priority:** P2 (Medium)  
-**Effort:** 2 hours
+**Effort:** 2 hours  
+**Completed:** November 1, 2025
 
-Search expenses by description, category, amount.
+Search expenses by title and description with debouncing!
 
 **Tasks:**
-- [ ] Add search input in ExpenseList
-- [ ] Implement filter logic
-- [ ] Add debounce for performance
+- [x] Add search input in ExpenseList
+- [x] Implement filter logic
+- [x] Add debounce for performance (300ms)
+- [x] Added search icon
 
 ---
 
-### 8. Add Sort Expenses
-**Status:** Not Started  
+### 8. Add Sort Expenses ✅ COMPLETED
+**Status:** ✅ Completed (Already existed)  
 **Priority:** P2 (Medium)  
-**Effort:** 1-2 hours
+**Effort:** 1-2 hours  
+**Completed:** November 1, 2025
 
-Sort by date, amount, category (ascending/descending).
+Sort by date, amount, category, title. Feature was already implemented!
 
 ---
 
-### 9. Create Profile Page
-**Status:** Not Started  
+### 9. Create Profile Page ✅ COMPLETED
+**Status:** ✅ Completed  
 **Priority:** P2 (Medium)  
-**Effort:** 3-4 hours
+**Effort:** 3-4 hours  
+**Completed:** November 1, 2025
 
-User can view/edit profile info.
+User can view/edit profile info with beautiful animations!
 
 **Tasks:**
-- [ ] Create ProfilePage component
-- [ ] Add route /profile
-- [ ] Create PUT /api/auth/profile endpoint
-- [ ] Allow edit name, email, avatar upload
+- [x] Create ProfilePage component
+- [x] Add route /profile
+- [x] Used existing PUT /api/auth/profile endpoint
+- [x] Allow edit name, email
+- [x] Avatar with initials, account stats section
 
 ---
 
-### 10. Create Settings Page
-**Status:** Not Started  
+### 10. Create Settings Page ✅ COMPLETED
+**Status:** ✅ Completed  
 **Priority:** P2 (Medium)  
-**Effort:** 3-4 hours
+**Effort:** 3-4 hours  
+**Completed:** November 1, 2025
 
-User preferences and settings.
+User preferences and settings with notification toggles, theme, data management!
 
 **Tasks:**
 - [ ] Create SettingsPage component
@@ -223,26 +230,28 @@ Bulk import expenses from CSV file.
 
 ---
 
-### 16. Add Toast Notifications
-**Status:** Not Started  
+### 16. Add Toast Notifications ✅ COMPLETED
+**Status:** ✅ Completed  
 **Priority:** P2 (Medium)  
-**Effort:** 2 hours
+**Effort:** 2 hours  
+**Completed:** November 1, 2025
 
-Show success/error messages.
+Show success/error messages with react-hot-toast!
 
 **Tasks:**
-- [ ] Install react-hot-toast
-- [ ] Add toast notifications for all actions
-- [ ] Style with purple theme
+- [x] Install react-hot-toast
+- [x] Add toast notifications for all actions
+- [x] Style with purple theme
 
 ---
 
-### 17. Add Confirm Delete Dialog
-**Status:** Not Started  
+### 17. Add Confirm Delete Dialog ✅ COMPLETED
+**Status:** ✅ Completed  
 **Priority:** P2 (Medium)  
-**Effort:** 1 hour
+**Effort:** 1 hour  
+**Completed:** November 1, 2025
 
-Prevent accidental deletions.
+Prevent accidental deletions with styled modal dialogs!
 
 ---
 
