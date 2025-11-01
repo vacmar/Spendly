@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import api from './services/api';
 import LoadingScreen from './components/LoadingScreen';
 import AuthForm from './components/AuthForm';
 import ForgotPassword from './components/ForgotPassword';
@@ -17,6 +18,7 @@ function AppContent() {
   const [budgets, setBudgets] = useState({});
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingExpenses, setIsLoadingExpenses] = useState(false);
   
   const { user, loading: authLoading } = useAuth();
 
@@ -29,53 +31,93 @@ function AppContent() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Fetch expenses from backend when user logs in
   useEffect(() => {
     if (user) {
-      const savedExpenses = localStorage.getItem(`spendly-expenses-${user.id}`);
-      const savedBudgets = localStorage.getItem(`spendly-budgets-${user.id}`);
-      
-      if (savedExpenses) {
-        setExpenses(JSON.parse(savedExpenses));
-      }
-      
-      if (savedBudgets) {
-        setBudgets(JSON.parse(savedBudgets));
-      }
+      fetchExpenses();
+      fetchBudgets();
     }
   }, [user]);
 
-  // Save expenses to localStorage whenever expenses change
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem(`spendly-expenses-${user.id}`, JSON.stringify(expenses));
+  const fetchExpenses = async () => {
+    try {
+      setIsLoadingExpenses(true);
+      const response = await api.getExpenses({ limit: 1000 }); // Get all expenses
+      setExpenses(response.data || []);
+    } catch (error) {
+      console.error('Error fetching expenses:', error);
+    } finally {
+      setIsLoadingExpenses(false);
     }
-  }, [expenses, user]);
-
-  // Save budgets to localStorage whenever budgets change
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem(`spendly-budgets-${user.id}`, JSON.stringify(budgets));
-    }
-  }, [budgets, user]);
-
-  const addExpense = (expense) => {
-    const newExpense = {
-      ...expense,
-      id: Date.now().toString(),
-      date: new Date().toISOString().split('T')[0]
-    };
-    setExpenses(prev => [newExpense, ...prev]);
   };
 
-  const deleteExpense = (id) => {
-    setExpenses(prev => prev.filter(expense => expense.id !== id));
+  const fetchBudgets = async () => {
+    try {
+      const response = await api.getBudgets();
+      // Convert array to object format
+      const budgetObj = {};
+      if (response.data && Array.isArray(response.data)) {
+        response.data.forEach(budget => {
+          budgetObj[budget.category] = budget.amount;
+        });
+      }
+      setBudgets(budgetObj);
+    } catch (error) {
+      console.error('Error fetching budgets:', error);
+    }
   };
 
-  const updateBudget = (category, amount) => {
-    setBudgets(prev => ({
-      ...prev,
-      [category]: amount
-    }));
+  const addExpense = async (expense) => {
+    try {
+      const response = await api.createExpense(expense);
+      if (response.success) {
+        // Add to local state immediately for better UX
+        setExpenses(prev => [response.data, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding expense:', error);
+      alert('Failed to add expense. Please try again.');
+    }
+  };
+
+  const deleteExpense = async (id) => {
+    try {
+      await api.deleteExpense(id);
+      // Remove from local state immediately
+      setExpenses(prev => prev.filter(expense => expense._id !== id));
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      alert('Failed to delete expense. Please try again.');
+    }
+  };
+
+  const updateExpense = async (id, updatedData) => {
+    try {
+      const response = await api.updateExpense(id, updatedData);
+      if (response.success) {
+        // Update in local state immediately
+        setExpenses(prev => prev.map(expense => 
+          expense._id === id ? response.data : expense
+        ));
+      }
+    } catch (error) {
+      console.error('Error updating expense:', error);
+      alert('Failed to update expense. Please try again.');
+    }
+  };
+
+  const updateBudget = async (category, amount) => {
+    try {
+      await api.setBudget({ category, amount });
+      // Update local state immediately
+      setBudgets(prev => ({
+        ...prev,
+        [category]: amount
+      }));
+    } catch (error) {
+      console.error('Error updating budget:', error);
+      alert('Failed to update budget. Please try again.');
+    }
   };
 
   const handleLoadingComplete = () => {
@@ -179,7 +221,7 @@ function AppContent() {
               exit={{ opacity: 0, x: 100 }}
               transition={{ duration: 0.5 }}
             >
-              <ExpenseList expenses={expenses} onDeleteExpense={deleteExpense} />
+              <ExpenseList expenses={expenses} onDeleteExpense={deleteExpense} onUpdateExpense={updateExpense} />
             </motion.div>
           )}
           

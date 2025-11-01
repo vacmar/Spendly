@@ -1,9 +1,18 @@
 import { useState } from 'react';
+import { Pencil, Trash2, X, Check } from 'lucide-react';
 
-const ExpenseList = ({ expenses, onDeleteExpense }) => {
+const ExpenseList = ({ expenses, onDeleteExpense, onUpdateExpense }) => {
   const [sortBy, setSortBy] = useState('date');
   const [filterCategory, setFilterCategory] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    amount: '',
+    category: '',
+    description: '',
+    date: ''
+  });
 
   const categories = [
     'Food & Dining',
@@ -17,6 +26,38 @@ const ExpenseList = ({ expenses, onDeleteExpense }) => {
     'Personal Care',
     'Other'
   ];
+
+  const handleEditClick = (expense) => {
+    setEditingId(expense._id || expense.id);
+    setEditForm({
+      title: expense.title,
+      amount: expense.amount,
+      category: expense.category,
+      description: expense.description || '',
+      date: expense.date.split('T')[0] // Format date for input
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditForm({
+      title: '',
+      amount: '',
+      category: '',
+      description: '',
+      date: ''
+    });
+  };
+
+  const handleSaveEdit = async (id) => {
+    if (!editForm.title || !editForm.amount || !editForm.category) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    await onUpdateExpense(id, editForm);
+    handleCancelEdit();
+  };
 
   const getCategoryIcon = (category) => {
     const icons = {
@@ -126,41 +167,116 @@ const ExpenseList = ({ expenses, onDeleteExpense }) => {
         </div>
       ) : (
         <div className="grid gap-4">
-          {filteredAndSortedExpenses.map((expense) => (
-            <div key={expense.id} className="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-shadow">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4 flex-1">
-                  <div className="text-2xl">{getCategoryIcon(expense.category)}</div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-lg font-semibold text-gray-800">{expense.title}</h3>
-                      <span className="text-2xl font-bold text-purple-600">${expense.amount.toFixed(2)}</span>
+          {filteredAndSortedExpenses.map((expense) => {
+            const isEditing = editingId === (expense._id || expense.id);
+            
+            return (
+              <div key={expense._id || expense.id} className="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-shadow">
+                {isEditing ? (
+                  // Edit Mode
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <input
+                        type="text"
+                        value={editForm.title}
+                        onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Title"
+                      />
+                      <input
+                        type="number"
+                        value={editForm.amount}
+                        onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Amount"
+                        step="0.01"
+                      />
                     </div>
-                    <div className="flex items-center space-x-4 text-sm text-gray-500 mb-2">
-                      <span className="bg-gray-100 px-2 py-1 rounded-full">{expense.category}</span>
-                      <span>{new Date(expense.date).toLocaleDateString()}</span>
+                    <div className="grid grid-cols-2 gap-4">
+                      <select
+                        value={editForm.category}
+                        onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      >
+                        {categories.map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="date"
+                        value={editForm.date}
+                        onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
                     </div>
-                    {expense.description && (
-                      <p className="text-gray-600 text-sm">{expense.description}</p>
-                    )}
+                    <textarea
+                      value={editForm.description}
+                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="Description (optional)"
+                      rows="2"
+                    />
+                    <div className="flex justify-end space-x-2">
+                      <button
+                        onClick={handleCancelEdit}
+                        className="flex items-center space-x-1 px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                        <span>Cancel</span>
+                      </button>
+                      <button
+                        onClick={() => handleSaveEdit(expense._id || expense.id)}
+                        className="flex items-center space-x-1 px-4 py-2 text-white bg-purple-600 rounded-md hover:bg-purple-700 transition-colors"
+                      >
+                        <Check className="w-4 h-4" />
+                        <span>Save</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <button
-                  onClick={() => {
-                    if (window.confirm('Are you sure you want to delete this expense?')) {
-                      onDeleteExpense(expense.id);
-                    }
-                  }}
-                  className="ml-4 text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-full transition-colors"
-                  title="Delete expense"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
+                ) : (
+                  // View Mode
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-4 flex-1">
+                      <div className="text-2xl">{getCategoryIcon(expense.category)}</div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-lg font-semibold text-gray-800">{expense.title}</h3>
+                          <span className="text-2xl font-bold text-purple-600">${expense.amount.toFixed(2)}</span>
+                        </div>
+                        <div className="flex items-center space-x-4 text-sm text-gray-500 mb-2">
+                          <span className="bg-gray-100 px-2 py-1 rounded-full">{expense.category}</span>
+                          <span>{new Date(expense.date).toLocaleDateString()}</span>
+                        </div>
+                        {expense.description && (
+                          <p className="text-gray-600 text-sm">{expense.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex space-x-2 ml-4">
+                      <button
+                        onClick={() => handleEditClick(expense)}
+                        className="text-purple-600 hover:text-purple-700 p-2 hover:bg-purple-50 rounded-full transition-colors"
+                        title="Edit expense"
+                      >
+                        <Pencil className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to delete this expense?')) {
+                            onDeleteExpense(expense._id || expense.id);
+                          }
+                        }}
+                        className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-full transition-colors"
+                        title="Delete expense"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
