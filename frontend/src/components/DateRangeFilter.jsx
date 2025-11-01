@@ -8,7 +8,6 @@ const DateRangeFilter = ({ selectedRange, onRangeChange, customStartDate, custom
     { id: 'last7days', label: 'Last 7 Days' },
     { id: 'thisMonth', label: 'This Month' },
     { id: 'lastMonth', label: 'Last Month' },
-    { id: 'last30days', label: 'Last 30 Days' },
     { id: 'custom', label: 'Custom Range' }
   ];
 

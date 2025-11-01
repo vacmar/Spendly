@@ -7,7 +7,7 @@ import autoTable from 'jspdf-autotable';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
-const Settings = ({ onBack }) => {
+const Settings = ({ onBack, expenses: propExpenses = [], budgets: propBudgets = {} }) => {
   const { logout } = useAuth();
   const [notifications, setNotifications] = useState({
     budgetAlerts: true,
@@ -59,35 +59,181 @@ const Settings = ({ onBack }) => {
 
     try {
       const doc = new jsPDF();
+      let yPosition = 20;
       
+      // ===== PAGE 1: HEADER & SUMMARY =====
       // Add app name
-      doc.setFontSize(24);
-      doc.setTextColor(109, 40, 217); // Purple color
-      doc.text('Spendly', 14, 20);
+      doc.setFontSize(26);
+      doc.setTextColor(109, 40, 217);
+      doc.text('Spendly', 14, yPosition);
+      yPosition += 10;
       
-      // Add user name
-      doc.setFontSize(14);
-      doc.setTextColor(50);
-      doc.text(`Account: ${userData?.name || 'User'}`, 14, 30);
+      // Add user info
+      doc.setFontSize(12);
+      doc.setTextColor(80);
+      doc.text(`Account: ${userData?.name || 'User'}`, 14, yPosition);
+      yPosition += 6;
+      doc.text(`Email: ${userData?.email || 'N/A'}`, 14, yPosition);
+      yPosition += 10;
       
       // Add report title
-      doc.setFontSize(16);
+      doc.setFontSize(18);
       doc.setTextColor(0);
-      doc.text('Expense Report', 14, 40);
+      doc.text('Expense & Budget Report', 14, yPosition);
+      yPosition += 8;
       
       // Add date
       doc.setFontSize(10);
       doc.setTextColor(100);
-      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 48);
+      const timestamp = new Date().toLocaleString();
+      doc.text(`Generated on: ${timestamp}`, 14, yPosition);
+      yPosition += 15;
       
-      // Calculate totals
+      // Calculate summary statistics
       const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+      const categoryTotals = {};
+      expenses.forEach(expense => {
+        const cat = expense.category || 'Other';
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + expense.amount;
+      });
       
-      // Add summary
+      // Summary box
+      doc.setFillColor(249, 250, 251);
+      doc.rect(14, yPosition, 182, 30, 'F');
       doc.setFontSize(12);
       doc.setTextColor(0);
-      doc.text(`Total Expenses: ${expenses.length}`, 14, 58);
-      doc.text(`Total Amount: $${totalAmount.toFixed(2)}`, 14, 65);
+      doc.text(`Total Expenses: ${expenses.length}`, 20, yPosition + 10);
+      doc.text(`Total Amount: $${totalAmount.toFixed(2)}`, 20, yPosition + 20);
+      
+      const avgExpense = totalAmount / expenses.length;
+      doc.text(`Average Expense: $${avgExpense.toFixed(2)}`, 110, yPosition + 10);
+      
+      const dateRange = expenses.length > 0 ? 
+        `${new Date(Math.min(...expenses.map(e => new Date(e.date)))).toLocaleDateString()} - ${new Date(Math.max(...expenses.map(e => new Date(e.date)))).toLocaleDateString()}` : 
+        'N/A';
+      doc.setFontSize(9);
+      doc.text(`Period: ${dateRange}`, 110, yPosition + 20);
+      yPosition += 40;
+      
+      // ===== CATEGORY BREAKDOWN (Clean Table Format) =====
+      doc.setFontSize(14);
+      doc.setTextColor(109, 40, 217);
+      doc.text('Expenses by Category', 14, yPosition);
+      yPosition += 8;
+      
+      // Sort categories by amount
+      const sortedCategories = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
+      
+      // Color palette
+      const colors = [
+        [109, 40, 217],   // Purple
+        [236, 72, 153],   // Pink
+        [34, 197, 94],    // Green
+        [251, 146, 60],   // Orange
+        [59, 130, 246],   // Blue
+        [251, 191, 36],   // Yellow
+        [168, 85, 247],   // Violet
+        [14, 165, 233],   // Sky
+        [239, 68, 68],    // Red
+        [156, 163, 175]   // Gray
+      ];
+      
+      // Draw clean table-style category breakdown (no bars)
+      doc.setFontSize(9);
+      const pageRightMargin = 196;
+      
+      sortedCategories.forEach(([category, amount], index) => {
+        const percentage = (amount / totalAmount * 100).toFixed(1);
+        
+        yPosition += 8;
+        
+        // Color indicator (small square)
+        doc.setFillColor(...colors[index % colors.length]);
+        doc.rect(14, yPosition - 3, 4, 4, 'F');
+        
+        // Category name
+        doc.setTextColor(0);
+        doc.setFontSize(9);
+        doc.text(category, 22, yPosition);
+        
+        // Amount (right side with proper spacing)
+        const amountText = `$${amount.toFixed(2)}`;
+        const percentText = `${percentage}%`;
+        
+        // Position amount
+        doc.setTextColor(0);
+        doc.text(amountText, pageRightMargin - 25 - doc.getTextWidth(amountText), yPosition);
+        
+        // Position percentage at the far right
+        doc.setTextColor(100);
+        doc.text(percentText, pageRightMargin - doc.getTextWidth(percentText), yPosition);
+      });
+      
+      yPosition += 12;
+      
+      // ===== BUDGET STATUS =====
+      const budgetEntries = Object.entries(propBudgets);
+      if (budgetEntries.length > 0) {
+        doc.setFontSize(14);
+        doc.setTextColor(109, 40, 217);
+        doc.text('Budget Status', 14, yPosition);
+        yPosition += 10;
+        
+        budgetEntries.forEach(([category, budgetAmount]) => {
+          const spent = categoryTotals[category] || 0;
+          const remaining = budgetAmount - spent;
+          const percentUsed = (spent / budgetAmount * 100).toFixed(1);
+          const status = spent > budgetAmount ? 'OVER' : spent > budgetAmount * 0.8 ? 'WARN' : 'OK';
+          
+          doc.setFontSize(10);
+          doc.setTextColor(0);
+          doc.text(category, 14, yPosition);
+          
+          // Budget bar (constrained width)
+          const budgetBarWidth = 60;
+          const spentBarWidth = Math.min((spent / budgetAmount) * budgetBarWidth, budgetBarWidth);
+          
+          // Background bar (budget limit)
+          doc.setFillColor(220, 220, 220);
+          doc.rect(80, yPosition - 4, budgetBarWidth, 6, 'F');
+          
+          // Spent bar
+          if (status === 'OVER') {
+            doc.setFillColor(239, 68, 68); // Red
+          } else if (status === 'WARN') {
+            doc.setFillColor(251, 191, 36); // Yellow
+          } else {
+            doc.setFillColor(34, 197, 94); // Green
+          }
+          doc.rect(80, yPosition - 4, spentBarWidth, 6, 'F');
+          
+          // Status text (moved closer)
+          const statusText = `$${spent.toFixed(2)} / $${budgetAmount.toFixed(2)} (${percentUsed}%)`;
+          if (status === 'OVER') {
+            doc.setTextColor(239, 68, 68);
+            doc.text(`${statusText} - OVER`, 145, yPosition);
+          } else if (status === 'WARN') {
+            doc.setTextColor(251, 146, 60);
+            doc.text(statusText, 145, yPosition);
+          } else {
+            doc.setTextColor(34, 197, 94);
+            doc.text(statusText, 145, yPosition);
+          }
+          
+          yPosition += 10;
+        });
+        
+        yPosition += 5;
+      }
+      
+      // ===== NEW PAGE FOR TABLE =====
+      doc.addPage();
+      yPosition = 20;
+      
+      doc.setFontSize(14);
+      doc.setTextColor(109, 40, 217);
+      doc.text('Detailed Expense List', 14, yPosition);
+      yPosition += 10;
       
       // Prepare table data
       const tableData = expenses.map(expense => [
@@ -95,12 +241,12 @@ const Settings = ({ onBack }) => {
         expense.title || 'N/A',
         expense.category || 'N/A',
         `$${(expense.amount || 0).toFixed(2)}`,
-        expense.description || '-'
+        (expense.description || '-').substring(0, 30)
       ]);
       
       // Add table
       autoTable(doc, {
-        startY: 75,
+        startY: yPosition,
         head: [['Date', 'Title', 'Category', 'Amount', 'Description']],
         body: tableData,
         theme: 'striped',
@@ -111,20 +257,24 @@ const Settings = ({ onBack }) => {
           fontStyle: 'bold'
         },
         styles: {
-          fontSize: 9,
-          cellPadding: 3
+          fontSize: 8,
+          cellPadding: 2
         },
         columnStyles: {
           0: { cellWidth: 25 },
           1: { cellWidth: 40 },
-          2: { cellWidth: 35 },
+          2: { cellWidth: 30 },
           3: { cellWidth: 25 },
-          4: { cellWidth: 55 }
+          4: { cellWidth: 60 }
         }
       });
       
-      // Save the PDF
-      doc.save(`Spendly_Expenses_${userData?.name || 'User'}_${new Date().toISOString().split('T')[0]}.pdf`);
+      // Save the PDF with email in filename
+      const email = userData?.email || 'user';
+      const safeEmail = email.replace(/[^a-zA-Z0-9]/g, '_');
+      const now = new Date();
+      const fileTimestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+      doc.save(`Spendly_Report_${safeEmail}_${fileTimestamp}.pdf`);
       toast.success('PDF exported successfully!');
     } catch (error) {
       console.error('Error exporting PDF:', error);
@@ -144,10 +294,12 @@ const Settings = ({ onBack }) => {
   const confirmDeleteAccount = async () => {
     try {
       // Call API to delete account
-      await api.deleteAccount();
+      const response = await api.deleteAccount();
       
-      // Show success message
-      toast.success('Account deleted successfully');
+      // Show success message with counts
+      const expenseCount = response.deletedCount?.expenses || 0;
+      const budgetCount = response.deletedCount?.budgets || 0;
+      toast.success(`Account deleted! Removed ${expenseCount} expenses and ${budgetCount} budgets`);
       
       // Clear modal
       setDeleteConfirm({ isOpen: false });

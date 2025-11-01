@@ -198,19 +198,32 @@ const updateProfile = async (req, res) => {
 const deleteAccount = async (req, res) => {
   try {
     const userId = req.user._id;
+    console.log('=== DELETING ACCOUNT ===');
+    console.log('User ID to delete:', userId);
+    console.log('User ID type:', typeof userId);
+    console.log('User ID toString:', userId.toString());
 
-    // Delete user's expenses
-    await Expense.deleteMany({ userId });
+    // Delete user's expenses (field name is 'user' not 'userId')
+    console.log('Searching for expenses with user:', userId);
+    const deletedExpenses = await Expense.deleteMany({ user: userId });
+    console.log(`Deleted ${deletedExpenses.deletedCount} expenses`);
 
-    // Delete user's budgets
-    await Budget.deleteMany({ userId });
+    // Delete user's budgets (field name is 'user' not 'userId')
+    console.log('Searching for budgets with user:', userId);
+    const deletedBudgets = await Budget.deleteMany({ user: userId });
+    console.log(`Deleted ${deletedBudgets.deletedCount} budgets`);
 
     // Delete user
-    await User.findByIdAndDelete(userId);
+    const deletedUser = await User.findByIdAndDelete(userId);
+    console.log(`Deleted user:`, deletedUser ? deletedUser.email : 'User not found');
 
     res.status(200).json({
       success: true,
-      message: 'Account deleted successfully'
+      message: 'Account deleted successfully',
+      deletedCount: {
+        expenses: deletedExpenses.deletedCount,
+        budgets: deletedBudgets.deletedCount
+      }
     });
   } catch (error) {
     console.error('Delete account error:', error);

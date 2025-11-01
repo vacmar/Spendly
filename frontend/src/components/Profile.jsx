@@ -72,7 +72,7 @@ const Profile = ({ expenses, budgets, onNavigate }) => {
 
   // Render Settings if activeView is 'settings'
   if (activeView === 'settings') {
-    return <Settings onBack={() => setActiveView('profile')} />;
+    return <Settings onBack={() => setActiveView('profile')} expenses={expenses} budgets={budgets} />;
   }
 
   return (
