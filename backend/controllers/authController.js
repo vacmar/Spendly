@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const { body } = require('express-validator');
 const User = require('../models/User');
+const Expense = require('../models/Expense');
+const Budget = require('../models/Budget');
 const { handleValidationErrors } = require('../middleware/validation');
 
 // Generate JWT Token
@@ -198,10 +200,10 @@ const deleteAccount = async (req, res) => {
     const userId = req.user._id;
 
     // Delete user's expenses
-    await req.app.locals.db.collection('expenses').deleteMany({ userId });
+    await Expense.deleteMany({ userId });
 
     // Delete user's budgets
-    await req.app.locals.db.collection('budgets').deleteMany({ userId });
+    await Budget.deleteMany({ userId });
 
     // Delete user
     await User.findByIdAndDelete(userId);
