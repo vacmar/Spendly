@@ -19,6 +19,9 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingExpenses, setIsLoadingExpenses] = useState(false);
+  const [isLoadingBudgets, setIsLoadingBudgets] = useState(false);
+  const [isAddingExpense, setIsAddingExpense] = useState(false);
+  const [isUpdatingBudget, setIsUpdatingBudget] = useState(false);
   
   const { user, loading: authLoading } = useAuth();
 
@@ -53,6 +56,7 @@ function AppContent() {
 
   const fetchBudgets = async () => {
     try {
+      setIsLoadingBudgets(true);
       const response = await api.getBudgets();
       // Convert array to object format
       const budgetObj = {};
@@ -64,19 +68,27 @@ function AppContent() {
       setBudgets(budgetObj);
     } catch (error) {
       console.error('Error fetching budgets:', error);
+    } finally {
+      setIsLoadingBudgets(false);
     }
   };
 
   const addExpense = async (expense) => {
     try {
+      setIsAddingExpense(true);
       const response = await api.createExpense(expense);
       if (response.success) {
         // Add to local state immediately for better UX
         setExpenses(prev => [response.data, ...prev]);
+        return true; // Success indicator
       }
+      return false;
     } catch (error) {
       console.error('Error adding expense:', error);
       alert('Failed to add expense. Please try again.');
+      return false;
+    } finally {
+      setIsAddingExpense(false);
     }
   };
 
@@ -108,6 +120,7 @@ function AppContent() {
 
   const updateBudget = async (category, amount) => {
     try {
+      setIsUpdatingBudget(true);
       // If amount is 0, delete the budget
       if (amount === 0) {
         await api.deleteBudget(category);
@@ -128,6 +141,8 @@ function AppContent() {
     } catch (error) {
       console.error('Error updating budget:', error);
       alert('Failed to update budget. Please try again.');
+    } finally {
+      setIsUpdatingBudget(false);
     }
   };
 
@@ -223,7 +238,11 @@ function AppContent() {
               exit={{ opacity: 0, x: 100 }}
               transition={{ duration: 0.5 }}
             >
-              <Dashboard expenses={expenses} budgets={budgets} />
+              <Dashboard 
+                expenses={expenses} 
+                budgets={budgets} 
+                isLoading={isLoadingExpenses || isLoadingBudgets}
+              />
             </motion.div>
           )}
           
@@ -235,7 +254,10 @@ function AppContent() {
               exit={{ opacity: 0, x: 100 }}
               transition={{ duration: 0.5 }}
             >
-              <ExpenseForm onAddExpense={addExpense} />
+              <ExpenseForm 
+                onAddExpense={addExpense} 
+                isSubmitting={isAddingExpense}
+              />
             </motion.div>
           )}
           
@@ -247,7 +269,12 @@ function AppContent() {
               exit={{ opacity: 0, x: 100 }}
               transition={{ duration: 0.5 }}
             >
-              <ExpenseList expenses={expenses} onDeleteExpense={deleteExpense} onUpdateExpense={updateExpense} />
+              <ExpenseList 
+                expenses={expenses} 
+                onDeleteExpense={deleteExpense} 
+                onUpdateExpense={updateExpense}
+                isLoading={isLoadingExpenses}
+              />
             </motion.div>
           )}
           
@@ -264,6 +291,8 @@ function AppContent() {
                 budgets={budgets} 
                 onUpdateBudget={updateBudget}
                 onDeleteBudget={deleteBudget}
+                isLoading={isLoadingBudgets}
+                isUpdating={isUpdatingBudget}
               />
             </motion.div>
           )}

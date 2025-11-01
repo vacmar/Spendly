@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
 import { Pencil, Check, X, Trash2 } from 'lucide-react';
+import SkeletonLoader from './SkeletonLoader';
+import Spinner from './Spinner';
 
-const BudgetTracker = ({ expenses, budgets, onUpdateBudget, onDeleteBudget }) => {
+const BudgetTracker = ({ expenses, budgets, onUpdateBudget, onDeleteBudget, isLoading, isUpdating }) => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [budgetAmount, setBudgetAmount] = useState('');
   const [editingCategory, setEditingCategory] = useState(null);
@@ -157,8 +159,12 @@ const BudgetTracker = ({ expenses, budgets, onUpdateBudget, onDeleteBudget }) =>
   return (
     <div className="space-y-6">
       {/* Overall Budget Summary */}
-      <div className="bg-white p-6 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Budget Overview</h2>
+      {isLoading ? (
+        <SkeletonLoader type="budget" count={3} />
+      ) : (
+        <>
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Budget Overview</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="text-center">
@@ -338,6 +344,8 @@ const BudgetTracker = ({ expenses, budgets, onUpdateBudget, onDeleteBudget }) =>
           </div>
         ))}
       </div>
+        </>
+      )}
     </div>
   );
 };

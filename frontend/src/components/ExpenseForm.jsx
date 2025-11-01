@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, DollarSign, Tag, FileText } from 'lucide-react';
+import Spinner from './Spinner';
 
-const ExpenseForm = ({ onAddExpense }) => {
+const ExpenseForm = ({ onAddExpense, isSubmitting }) => {
   const [formData, setFormData] = useState({
     title: '',
     amount: '',
@@ -23,7 +24,7 @@ const ExpenseForm = ({ onAddExpense }) => {
     'Other'
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!formData.title || !formData.amount || !formData.category) {
@@ -31,25 +32,27 @@ const ExpenseForm = ({ onAddExpense }) => {
       return;
     }
 
-    onAddExpense({
+    const success = await onAddExpense({
       ...formData,
       amount: parseFloat(formData.amount)
     });
 
-    // Reset form
-    setFormData({
-      title: '',
-      amount: '',
-      category: '',
-      description: ''
-    });
+    if (success) {
+      // Reset form
+      setFormData({
+        title: '',
+        amount: '',
+        category: '',
+        description: ''
+      });
 
-    // Success animation
-    const successAnimation = document.createElement('div');
-    successAnimation.innerHTML = '✨ Expense added successfully! ✨';
-    successAnimation.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce';
-    document.body.appendChild(successAnimation);
-    setTimeout(() => document.body.removeChild(successAnimation), 3000);
+      // Success animation
+      const successAnimation = document.createElement('div');
+      successAnimation.innerHTML = '✨ Expense added successfully! ✨';
+      successAnimation.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce';
+      document.body.appendChild(successAnimation);
+      setTimeout(() => document.body.removeChild(successAnimation), 3000);
+    }
   };
 
   const handleChange = (e) => {
@@ -187,20 +190,30 @@ const ExpenseForm = ({ onAddExpense }) => {
           >
             <motion.button
               type="submit"
-              className="px-8 py-3 rounded-xl font-semibold text-white shadow-lg transition-all duration-300"
+              disabled={isSubmitting}
+              className={`px-8 py-3 rounded-xl font-semibold text-white shadow-lg transition-all duration-300 ${
+                isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
               style={{
                 background: 'linear-gradient(135deg, #8b5cf6 0%, #a855f7 50%, #c084fc 100%)'
               }}
-              whileHover={{ 
+              whileHover={!isSubmitting ? { 
                 scale: 1.05,
                 boxShadow: '0 20px 40px rgba(139, 92, 246, 0.3)'
-              }}
-              whileTap={{ scale: 0.95 }}
+              } : {}}
+              whileTap={!isSubmitting ? { scale: 0.95 } : {}}
             >
-              <span className="flex items-center">
-                <Plus className="w-5 h-5 mr-2" />
-                Add Expense
-              </span>
+              {isSubmitting ? (
+                <span className="flex items-center">
+                  <Spinner size="sm" color="white" />
+                  <span className="ml-2">Adding...</span>
+                </span>
+              ) : (
+                <span className="flex items-center">
+                  <Plus className="w-5 h-5 mr-2" />
+                  Add Expense
+                </span>
+              )}
             </motion.button>
           </motion.div>
         </form>

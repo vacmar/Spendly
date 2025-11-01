@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, Calendar, Target, Receipt } from 'lucide-react';
+import SkeletonLoader from './SkeletonLoader';
 
-const Dashboard = ({ expenses, budgets }) => {
+const Dashboard = ({ expenses, budgets, isLoading }) => {
   const dashboardData = useMemo(() => {
     if (!expenses.length) return null;
 
@@ -141,6 +142,10 @@ const Dashboard = ({ expenses, budgets }) => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
     >
+      {isLoading ? (
+        <SkeletonLoader type="dashboard" />
+      ) : (
+        <>
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <motion.div 
@@ -441,6 +446,8 @@ const Dashboard = ({ expenses, budgets }) => {
           })}
         </div>
       </motion.div>
+        </>
+      )}
     </motion.div>
   );
 };
