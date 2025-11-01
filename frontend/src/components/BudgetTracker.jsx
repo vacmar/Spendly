@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Pencil, Check, X, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ConfirmDialog from './ConfirmDialog';
 import SkeletonLoader from './SkeletonLoader';
 import Spinner from './Spinner';
 
@@ -9,6 +10,7 @@ const BudgetTracker = ({ expenses, budgets, onUpdateBudget, onDeleteBudget, isLo
   const [budgetAmount, setBudgetAmount] = useState('');
   const [editingCategory, setEditingCategory] = useState(null);
   const [editAmount, setEditAmount] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, category: '' });
 
   const categories = [
     'Food & Dining',
@@ -117,10 +119,13 @@ const BudgetTracker = ({ expenses, budgets, onUpdateBudget, onDeleteBudget, isLo
     setEditAmount('');
   };
 
-  const handleDeleteBudget = (category) => {
-    if (window.confirm(`Are you sure you want to delete the budget for ${category}?`)) {
-      onDeleteBudget(category);
-    }
+  const handleDeleteClick = (category) => {
+    setDeleteConfirm({ isOpen: true, category });
+  };
+
+  const handleConfirmDelete = () => {
+    onDeleteBudget(deleteConfirm.category);
+    setDeleteConfirm({ isOpen: false, category: '' });
   };
 
   const getCategoryIcon = (category) => {
@@ -271,7 +276,7 @@ const BudgetTracker = ({ expenses, budgets, onUpdateBudget, onDeleteBudget, isLo
                       <Pencil size={18} />
                     </button>
                     <button
-                      onClick={() => handleDeleteBudget(item.category)}
+                      onClick={() => handleDeleteClick(item.category)}
                       className="text-red-500 hover:text-red-700 p-1"
                       title="Delete budget"
                     >
@@ -347,6 +352,16 @@ const BudgetTracker = ({ expenses, budgets, onUpdateBudget, onDeleteBudget, isLo
       </div>
         </>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, category: '' })}
+        onConfirm={handleConfirmDelete}
+        title="Delete Budget?"
+        message={`Are you sure you want to delete the budget for "${deleteConfirm.category}"? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="danger"
+      />
     </div>
   );
 };

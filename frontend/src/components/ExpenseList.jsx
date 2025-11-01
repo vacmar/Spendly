@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { Pencil, Trash2, X, Check } from 'lucide-react';
+import toast from 'react-hot-toast';
 import SkeletonLoader from './SkeletonLoader';
+import ConfirmDialog from './ConfirmDialog';
 
 const ExpenseList = ({ expenses, onDeleteExpense, onUpdateExpense, isLoading }) => {
   const [sortBy, setSortBy] = useState('date');
   const [filterCategory, setFilterCategory] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, title: '' });
   const [editForm, setEditForm] = useState({
     title: '',
     amount: '',
@@ -52,12 +55,25 @@ const ExpenseList = ({ expenses, onDeleteExpense, onUpdateExpense, isLoading }) 
 
   const handleSaveEdit = async (id) => {
     if (!editForm.title || !editForm.amount || !editForm.category) {
-      alert('Please fill in all required fields');
+      toast.error('Please fill in all required fields');
       return;
     }
 
     await onUpdateExpense(id, editForm);
     handleCancelEdit();
+  };
+
+  const handleDeleteClick = (expense) => {
+    setDeleteConfirm({
+      isOpen: true,
+      id: expense._id || expense.id,
+      title: expense.title
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    onDeleteExpense(deleteConfirm.id);
+    setDeleteConfirm({ isOpen: false, id: null, title: '' });
   };
 
   const getCategoryIcon = (category) => {
@@ -264,11 +280,7 @@ const ExpenseList = ({ expenses, onDeleteExpense, onUpdateExpense, isLoading }) 
                         <Pencil className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => {
-                          if (window.confirm('Are you sure you want to delete this expense?')) {
-                            onDeleteExpense(expense._id || expense.id);
-                          }
-                        }}
+                        onClick={() => handleDeleteClick(expense)}
                         className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-full transition-colors"
                         title="Delete expense"
                       >
@@ -282,6 +294,16 @@ const ExpenseList = ({ expenses, onDeleteExpense, onUpdateExpense, isLoading }) 
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null, title: '' })}
+        onConfirm={handleConfirmDelete}
+        title="Delete Expense?"
+        message={`Are you sure you want to delete "${deleteConfirm.title}"? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="danger"
+      />
     </div>
   );
 };
