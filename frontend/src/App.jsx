@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast, { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import api from './services/api';
 import LoadingScreen from './components/LoadingScreen';
@@ -81,12 +82,13 @@ function AppContent() {
       if (response.success) {
         // Add to local state immediately for better UX
         setExpenses(prev => [response.data, ...prev]);
+        toast.success('Expense added successfully! 💸');
         return true; // Success indicator
       }
       return false;
     } catch (error) {
       console.error('Error adding expense:', error);
-      alert('Failed to add expense. Please try again.');
+      toast.error('Failed to add expense. Please try again.');
       return false;
     } finally {
       setIsAddingExpense(false);
@@ -98,9 +100,10 @@ function AppContent() {
       await api.deleteExpense(id);
       // Remove from local state immediately
       setExpenses(prev => prev.filter(expense => expense._id !== id));
+      toast.success('Expense deleted successfully');
     } catch (error) {
       console.error('Error deleting expense:', error);
-      alert('Failed to delete expense. Please try again.');
+      toast.error('Failed to delete expense. Please try again.');
     }
   };
 
@@ -112,10 +115,11 @@ function AppContent() {
         setExpenses(prev => prev.map(expense => 
           expense._id === id ? response.data : expense
         ));
+        toast.success('Expense updated successfully');
       }
     } catch (error) {
       console.error('Error updating expense:', error);
-      alert('Failed to update expense. Please try again.');
+      toast.error('Failed to update expense. Please try again.');
     }
   };
 
@@ -131,6 +135,7 @@ function AppContent() {
           delete newBudgets[category];
           return newBudgets;
         });
+        toast.success('Budget removed successfully');
       } else {
         await api.setBudget({ category, amount });
         // Update local state immediately
@@ -138,10 +143,11 @@ function AppContent() {
           ...prev,
           [category]: amount
         }));
+        toast.success('Budget updated successfully 🎯');
       }
     } catch (error) {
       console.error('Error updating budget:', error);
-      alert('Failed to update budget. Please try again.');
+      toast.error('Failed to update budget. Please try again.');
     } finally {
       setIsUpdatingBudget(false);
     }
@@ -156,9 +162,10 @@ function AppContent() {
         delete newBudgets[category];
         return newBudgets;
       });
+      toast.success('Budget deleted successfully');
     } catch (error) {
       console.error('Error deleting budget:', error);
-      alert('Failed to delete budget. Please try again.');
+      toast.error('Failed to delete budget. Please try again.');
     }
   };
 
@@ -320,6 +327,38 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#fff',
+              color: '#374151',
+              padding: '16px',
+              borderRadius: '10px',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              border: '1px solid #e5e7eb',
+            },
+            success: {
+              iconTheme: {
+                primary: '#8b5cf6',
+                secondary: '#fff',
+              },
+              style: {
+                border: '1px solid #8b5cf6',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+              style: {
+                border: '1px solid #ef4444',
+              },
+            },
+          }}
+        />
         <Routes>
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />

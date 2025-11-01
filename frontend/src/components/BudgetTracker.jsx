@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Pencil, Check, X, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import SkeletonLoader from './SkeletonLoader';
 import Spinner from './Spinner';
 
@@ -86,7 +87,7 @@ const BudgetTracker = ({ expenses, budgets, onUpdateBudget, onDeleteBudget, isLo
   const handleSetBudget = (e) => {
     e.preventDefault();
     if (!selectedCategory || !budgetAmount || parseFloat(budgetAmount) <= 0) {
-      alert('Please select a category and enter a valid budget amount');
+      toast.error('Please select a category and enter a valid budget amount');
       return;
     }
 
@@ -103,7 +104,7 @@ const BudgetTracker = ({ expenses, budgets, onUpdateBudget, onDeleteBudget, isLo
   const handleSaveEdit = (category) => {
     const amount = parseFloat(editAmount);
     if (isNaN(amount) || amount < 0) {
-      alert('Please enter a valid amount');
+      toast.error('Please enter a valid amount');
       return;
     }
     onUpdateBudget(category, amount);
