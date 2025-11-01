@@ -40,10 +40,16 @@ const Dashboard = ({ expenses, budgets, isLoading }) => {
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
+      date.setHours(0, 0, 0, 0); // Reset time for accurate comparison
+      
       const dayExpenses = expenses
-        .filter(expense => expense.date === dateStr)
+        .filter(expense => {
+          const expenseDate = new Date(expense.date);
+          expenseDate.setHours(0, 0, 0, 0);
+          return expenseDate.getTime() === date.getTime();
+        })
         .reduce((sum, expense) => sum + expense.amount, 0);
+      
       weeklyData.push({
         date: date.toLocaleDateString('en-US', { weekday: 'short' }),
         amount: dayExpenses
