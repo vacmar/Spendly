@@ -1,8 +1,11 @@
 import { useState, useMemo } from 'react';
+import { Pencil, Check, X, Trash2 } from 'lucide-react';
 
-const BudgetTracker = ({ expenses, budgets, onUpdateBudget }) => {
+const BudgetTracker = ({ expenses, budgets, onUpdateBudget, onDeleteBudget }) => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [budgetAmount, setBudgetAmount] = useState('');
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [editAmount, setEditAmount] = useState('');
 
   const categories = [
     'Food & Dining',
@@ -88,6 +91,33 @@ const BudgetTracker = ({ expenses, budgets, onUpdateBudget }) => {
     onUpdateBudget(selectedCategory, parseFloat(budgetAmount));
     setSelectedCategory('');
     setBudgetAmount('');
+  };
+
+  const handleEditClick = (category, currentAmount) => {
+    setEditingCategory(category);
+    setEditAmount(currentAmount.toString());
+  };
+
+  const handleSaveEdit = (category) => {
+    const amount = parseFloat(editAmount);
+    if (isNaN(amount) || amount < 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+    onUpdateBudget(category, amount);
+    setEditingCategory(null);
+    setEditAmount('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCategory(null);
+    setEditAmount('');
+  };
+
+  const handleDeleteBudget = (category) => {
+    if (window.confirm(`Are you sure you want to delete the budget for ${category}?`)) {
+      onDeleteBudget(category);
+    }
   };
 
   const getCategoryIcon = (category) => {
@@ -224,17 +254,23 @@ const BudgetTracker = ({ expenses, budgets, onUpdateBudget }) => {
                   {getStatusText(item.status)}
                 </span>
                 
-                {item.budget > 0 && (
-                  <button
-                    onClick={() => {
-                      if (window.confirm(`Remove budget for ${item.category}?`)) {
-                        onUpdateBudget(item.category, 0);
-                      }
-                    }}
-                    className="text-red-500 hover:text-red-700 text-sm"
-                  >
-                    Remove
-                  </button>
+                {item.budget > 0 && editingCategory !== item.category && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleEditClick(item.category, item.budget)}
+                      className="text-purple-600 hover:text-purple-700 p-1"
+                      title="Edit budget"
+                    >
+                      <Pencil size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteBudget(item.category)}
+                      className="text-red-500 hover:text-red-700 p-1"
+                      title="Delete budget"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -243,7 +279,35 @@ const BudgetTracker = ({ expenses, budgets, onUpdateBudget }) => {
               <div>
                 <div className="flex justify-between text-sm text-gray-600 mb-2">
                   <span>Spent: ${item.spent.toFixed(2)}</span>
-                  <span>Budget: ${item.budget.toFixed(2)}</span>
+                  {editingCategory === item.category ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={editAmount}
+                        onChange={(e) => setEditAmount(e.target.value)}
+                        className="w-24 px-2 py-1 border border-purple-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        step="0.01"
+                        min="0"
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => handleSaveEdit(item.category)}
+                        className="text-green-600 hover:text-green-700 p-1"
+                        title="Save"
+                      >
+                        <Check size={18} />
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        className="text-red-600 hover:text-red-700 p-1"
+                        title="Cancel"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                  ) : (
+                    <span>Budget: ${item.budget.toFixed(2)}</span>
+                  )}
                 </div>
                 
                 <div className="w-full bg-gray-200 rounded-full h-3 mb-2">

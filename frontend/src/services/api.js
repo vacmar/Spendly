@@ -181,6 +181,13 @@ class ApiService {
     });
   }
 
+  async updateBudget(category, budgetData) {
+    return this.request(`/budgets/${encodeURIComponent(category)}`, {
+      method: 'PUT',
+      body: JSON.stringify(budgetData),
+    });
+  }
+
   async deleteBudget(category) {
     return this.request(`/budgets/${encodeURIComponent(category)}`, {
       method: 'DELETE',

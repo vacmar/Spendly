@@ -22,6 +22,7 @@ router.get('/comparison', getBudgetComparison);
 
 router.route('/:category')
   .get(getBudget)
+  .put(setBudget)
   .delete(deleteBudget);
 
 module.exports = router;

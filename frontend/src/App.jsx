@@ -108,15 +108,41 @@ function AppContent() {
 
   const updateBudget = async (category, amount) => {
     try {
-      await api.setBudget({ category, amount });
-      // Update local state immediately
-      setBudgets(prev => ({
-        ...prev,
-        [category]: amount
-      }));
+      // If amount is 0, delete the budget
+      if (amount === 0) {
+        await api.deleteBudget(category);
+        // Remove from local state
+        setBudgets(prev => {
+          const newBudgets = { ...prev };
+          delete newBudgets[category];
+          return newBudgets;
+        });
+      } else {
+        await api.setBudget({ category, amount });
+        // Update local state immediately
+        setBudgets(prev => ({
+          ...prev,
+          [category]: amount
+        }));
+      }
     } catch (error) {
       console.error('Error updating budget:', error);
       alert('Failed to update budget. Please try again.');
+    }
+  };
+
+  const deleteBudget = async (category) => {
+    try {
+      await api.deleteBudget(category);
+      // Remove from local state
+      setBudgets(prev => {
+        const newBudgets = { ...prev };
+        delete newBudgets[category];
+        return newBudgets;
+      });
+    } catch (error) {
+      console.error('Error deleting budget:', error);
+      alert('Failed to delete budget. Please try again.');
     }
   };
 
@@ -236,7 +262,8 @@ function AppContent() {
               <BudgetTracker 
                 expenses={expenses} 
                 budgets={budgets} 
-                onUpdateBudget={updateBudget} 
+                onUpdateBudget={updateBudget}
+                onDeleteBudget={deleteBudget}
               />
             </motion.div>
           )}
