@@ -3,7 +3,8 @@ const {
   register,
   login,
   getMe,
-  updateProfile
+  updateProfile,
+  deleteAccount
 } = require('../controllers/authController');
 const {
   forgotPassword,
@@ -24,5 +25,6 @@ router.post('/google', googleSignIn);
 // Protected routes
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
+router.delete('/account', protect, deleteAccount);
 
 module.exports = router;

@@ -1,23 +1,25 @@
 import { useState } from 'react';
-import { Settings as SettingsIcon, Bell, Download, Upload, Trash2, Moon, Sun, ArrowLeft, FileText } from 'lucide-react';
+import { Settings as SettingsIcon, Bell, Download, Upload, Trash2, ArrowLeft, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import ConfirmDialog from './ConfirmDialog';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import api from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const Settings = ({ onBack }) => {
+  const { logout } = useAuth();
   const [notifications, setNotifications] = useState({
     budgetAlerts: true,
     expenseReminders: false,
     weeklyReports: true
   });
-  const [theme, setTheme] = useState('light');
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false });
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [showExportModal, setShowExportModal] = useState(false);
   const [expenses, setExpenses] = useState([]);
   const [isLoadingExpenses, setIsLoadingExpenses] = useState(false);
+  const [userData, setUserData] = useState(null);
 
   const handleNotificationChange = (key) => {
     setNotifications({
@@ -27,15 +29,17 @@ const Settings = ({ onBack }) => {
     toast.success('Notification preference updated');
   };
 
-  const handleThemeChange = (newTheme) => {
-    setTheme(newTheme);
-    toast.success(`Theme changed to ${newTheme}`);
-  };
-
   const handleExportData = async () => {
     try {
       setIsLoadingExpenses(true);
       setShowExportModal(true);
+      
+      // Fetch user data
+      const userResponse = await api.getCurrentUser();
+      const user = userResponse.user || userResponse;
+      setUserData(user);
+      
+      // Fetch expenses
       const response = await api.getExpenses({ limit: 1000 });
       setExpenses(response.data || []);
       toast.success('Expense data loaded!');
@@ -56,15 +60,25 @@ const Settings = ({ onBack }) => {
     try {
       const doc = new jsPDF();
       
-      // Add title
-      doc.setFontSize(20);
+      // Add app name
+      doc.setFontSize(24);
       doc.setTextColor(109, 40, 217); // Purple color
-      doc.text('Expense Report', 14, 20);
+      doc.text('Spendly', 14, 20);
+      
+      // Add user name
+      doc.setFontSize(14);
+      doc.setTextColor(50);
+      doc.text(`Account: ${userData?.name || 'User'}`, 14, 30);
+      
+      // Add report title
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text('Expense Report', 14, 40);
       
       // Add date
       doc.setFontSize(10);
       doc.setTextColor(100);
-      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 48);
       
       // Calculate totals
       const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -72,8 +86,8 @@ const Settings = ({ onBack }) => {
       // Add summary
       doc.setFontSize(12);
       doc.setTextColor(0);
-      doc.text(`Total Expenses: ${expenses.length}`, 14, 38);
-      doc.text(`Total Amount: $${totalAmount.toFixed(2)}`, 14, 45);
+      doc.text(`Total Expenses: ${expenses.length}`, 14, 58);
+      doc.text(`Total Amount: $${totalAmount.toFixed(2)}`, 14, 65);
       
       // Prepare table data
       const tableData = expenses.map(expense => [
@@ -85,8 +99,8 @@ const Settings = ({ onBack }) => {
       ]);
       
       // Add table
-      doc.autoTable({
-        startY: 55,
+      autoTable(doc, {
+        startY: 75,
         head: [['Date', 'Title', 'Category', 'Amount', 'Description']],
         body: tableData,
         theme: 'striped',
@@ -110,7 +124,7 @@ const Settings = ({ onBack }) => {
       });
       
       // Save the PDF
-      doc.save(`expenses_${new Date().toISOString().split('T')[0]}.pdf`);
+      doc.save(`Spendly_Expenses_${userData?.name || 'User'}_${new Date().toISOString().split('T')[0]}.pdf`);
       toast.success('PDF exported successfully!');
     } catch (error) {
       console.error('Error exporting PDF:', error);
@@ -127,10 +141,24 @@ const Settings = ({ onBack }) => {
     setDeleteConfirm({ isOpen: true });
   };
 
-  const confirmDeleteAccount = () => {
-    // TODO: Implement account deletion
-    toast.error('Account deletion not yet implemented');
-    setDeleteConfirm({ isOpen: false });
+  const confirmDeleteAccount = async () => {
+    try {
+      // Call API to delete account
+      await api.deleteAccount();
+      
+      // Show success message
+      toast.success('Account deleted successfully');
+      
+      // Clear modal
+      setDeleteConfirm({ isOpen: false });
+      setDeleteConfirmText('');
+      
+      // Logout and redirect
+      logout();
+    } catch (error) {
+      console.error('Delete account error:', error);
+      toast.error(error.message || 'Failed to delete account');
+    }
   };
 
   return (
@@ -215,46 +243,6 @@ const Settings = ({ onBack }) => {
                 <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
               </label>
             </div>
-          </div>
-        </div>
-
-        {/* Theme */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            {theme === 'light' ? (
-              <Sun className="w-6 h-6 text-purple-600" />
-            ) : (
-              <Moon className="w-6 h-6 text-purple-600" />
-            )}
-            <h2 className="text-xl font-bold text-gray-800">Appearance</h2>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <motion.button
-              onClick={() => handleThemeChange('light')}
-              className={`p-4 rounded-lg border-2 transition-all ${
-                theme === 'light'
-                  ? 'border-purple-600 bg-purple-50'
-                  : 'border-gray-300 bg-white hover:border-purple-300'
-              }`}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Sun className="w-8 h-8 mx-auto mb-2 text-purple-600" />
-              <p className="text-center font-medium">Light Mode</p>
-            </motion.button>
-            <motion.button
-              onClick={() => handleThemeChange('dark')}
-              className={`p-4 rounded-lg border-2 transition-all ${
-                theme === 'dark'
-                  ? 'border-purple-600 bg-purple-50'
-                  : 'border-gray-300 bg-white hover:border-purple-300'
-              }`}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Moon className="w-8 h-8 mx-auto mb-2 text-purple-600" />
-              <p className="text-center font-medium">Dark Mode</p>
-            </motion.button>
           </div>
         </div>
 
@@ -446,15 +434,74 @@ const Settings = ({ onBack }) => {
       )}
 
       {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={deleteConfirm.isOpen}
-        onClose={() => setDeleteConfirm({ isOpen: false })}
-        onConfirm={confirmDeleteAccount}
-        title="Delete Account?"
-        message="Are you absolutely sure? This action cannot be undone. All your expenses, budgets, and data will be permanently deleted."
-        confirmText="Delete Account"
-        variant="danger"
-      />
+      {deleteConfirm.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-red-100 rounded-full">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800">Delete Account?</h2>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-600 mb-4">
+                This action <strong className="text-red-600">cannot be undone</strong>. This will permanently delete your account, including:
+              </p>
+              <ul className="list-disc list-inside text-gray-600 space-y-1 ml-2">
+                <li>All expenses and transactions</li>
+                <li>All budgets and categories</li>
+                <li>Your profile and settings</li>
+              </ul>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Type <span className="font-bold text-red-600">confirm</span> to proceed:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-500"
+                placeholder="Type 'confirm'"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <motion.button
+                onClick={() => {
+                  setDeleteConfirm({ isOpen: false });
+                  setDeleteConfirmText('');
+                }}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Cancel
+              </motion.button>
+              <motion.button
+                onClick={confirmDeleteAccount}
+                disabled={deleteConfirmText !== 'confirm'}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  deleteConfirmText === 'confirm'
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+                whileHover={deleteConfirmText === 'confirm' ? { scale: 1.02 } : {}}
+                whileTap={deleteConfirmText === 'confirm' ? { scale: 0.98 } : {}}
+              >
+                Delete Account
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

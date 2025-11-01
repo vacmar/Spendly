@@ -190,9 +190,39 @@ const updateProfile = async (req, res) => {
   }
 };
 
+// @desc    Delete user account
+// @route   DELETE /api/auth/account
+// @access  Private
+const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Delete user's expenses
+    await req.app.locals.db.collection('expenses').deleteMany({ userId });
+
+    // Delete user's budgets
+    await req.app.locals.db.collection('budgets').deleteMany({ userId });
+
+    // Delete user
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Account deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while deleting account'
+    });
+  }
+};
+
 module.exports = {
   register: [registerValidation, handleValidationErrors, register],
   login: [loginValidation, handleValidationErrors, login],
   getMe,
-  updateProfile
+  updateProfile,
+  deleteAccount
 };

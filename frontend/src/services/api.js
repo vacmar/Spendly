@@ -103,6 +103,12 @@ class ApiService {
     });
   }
 
+  async deleteAccount() {
+    return this.request('/auth/account', {
+      method: 'DELETE',
+    });
+  }
+
   logout() {
     this.setToken(null);
     localStorage.removeItem('spendly-expenses');
