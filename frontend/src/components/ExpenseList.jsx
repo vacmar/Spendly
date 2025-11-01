@@ -1,13 +1,19 @@
-import { useState } from 'react';
-import { Pencil, Trash2, X, Check } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Pencil, Trash2, X, Check, Search } from 'lucide-react';
+import { useDebounce } from 'use-debounce';
 import toast from 'react-hot-toast';
 import SkeletonLoader from './SkeletonLoader';
 import ConfirmDialog from './ConfirmDialog';
+import DateRangeFilter from './DateRangeFilter';
 
 const ExpenseList = ({ expenses, onDeleteExpense, onUpdateExpense, isLoading }) => {
   const [sortBy, setSortBy] = useState('date');
   const [filterCategory, setFilterCategory] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
+  const [dateRange, setDateRange] = useState('all');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, title: '' });
   const [editForm, setEditForm] = useState({
@@ -76,6 +82,53 @@ const ExpenseList = ({ expenses, onDeleteExpense, onUpdateExpense, isLoading }) 
     setDeleteConfirm({ isOpen: false, id: null, title: '' });
   };
 
+  const handleRangeChange = (range) => {
+    setDateRange(range);
+    if (range !== 'custom') {
+      setCustomStartDate('');
+      setCustomEndDate('');
+    }
+  };
+
+  const handleCustomDateChange = (type, value) => {
+    if (type === 'start') {
+      setCustomStartDate(value);
+    } else {
+      setCustomEndDate(value);
+    }
+  };
+
+  const getDateRange = () => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    switch (dateRange) {
+      case 'today':
+        return { start: today, end: new Date(today.getTime() + 86400000) };
+      case 'last7days':
+        return { start: new Date(today.getTime() - 7 * 86400000), end: now };
+      case 'thisMonth':
+        return { start: new Date(now.getFullYear(), now.getMonth(), 1), end: now };
+      case 'lastMonth': {
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+        return { start: lastMonth, end: lastMonthEnd };
+      }
+      case 'last30days':
+        return { start: new Date(today.getTime() - 30 * 86400000), end: now };
+      case 'custom':
+        if (customStartDate && customEndDate) {
+          return { 
+            start: new Date(customStartDate), 
+            end: new Date(new Date(customEndDate).getTime() + 86400000) 
+          };
+        }
+        return null;
+      default: // 'all'
+        return null;
+    }
+  };
+
   const getCategoryIcon = (category) => {
     const icons = {
       'Food & Dining': '🍽️',
@@ -93,31 +146,52 @@ const ExpenseList = ({ expenses, onDeleteExpense, onUpdateExpense, isLoading }) 
   };
 
   // Filter and sort expenses
-  const filteredAndSortedExpenses = expenses
-    .filter(expense => {
-      const matchesCategory = !filterCategory || expense.category === filterCategory;
-      const matchesSearch = !searchTerm || 
-        expense.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expense.description.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesCategory && matchesSearch;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case 'amount':
-          return b.amount - a.amount;
-        case 'title':
-          return a.title.localeCompare(b.title);
-        case 'category':
-          return a.category.localeCompare(b.category);
-        default: // date
-          return new Date(b.date) - new Date(a.date);
-      }
-    });
+  const filteredAndSortedExpenses = useMemo(() => {
+    const dateRangeFilter = getDateRange();
+    
+    return expenses
+      .filter(expense => {
+        const matchesCategory = !filterCategory || expense.category === filterCategory;
+        const matchesSearch = !debouncedSearchTerm || 
+          expense.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+          (expense.description && expense.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
+        
+        // Date range filter
+        let matchesDateRange = true;
+        if (dateRangeFilter) {
+          const expenseDate = new Date(expense.date);
+          matchesDateRange = expenseDate >= dateRangeFilter.start && expenseDate < dateRangeFilter.end;
+        }
+        
+        return matchesCategory && matchesSearch && matchesDateRange;
+      })
+      .sort((a, b) => {
+        switch (sortBy) {
+          case 'amount':
+            return b.amount - a.amount;
+          case 'title':
+            return a.title.localeCompare(b.title);
+          case 'category':
+            return a.category.localeCompare(b.category);
+          default: // date
+            return new Date(b.date) - new Date(a.date);
+        }
+      });
+  }, [expenses, filterCategory, debouncedSearchTerm, dateRange, customStartDate, customEndDate, sortBy]);
 
   const totalAmount = filteredAndSortedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   return (
     <div className="space-y-6">
+      {/* Date Range Filter */}
+      <DateRangeFilter
+        selectedRange={dateRange}
+        onRangeChange={handleRangeChange}
+        customStartDate={customStartDate}
+        customEndDate={customEndDate}
+        onCustomDateChange={handleCustomDateChange}
+      />
+
       <div className="bg-white shadow-lg rounded-lg p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">All Expenses</h2>
@@ -132,13 +206,16 @@ const ExpenseList = ({ expenses, onDeleteExpense, onUpdateExpense, isLoading }) 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search expenses..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by title or description..."
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
           </div>
 
           <div>
