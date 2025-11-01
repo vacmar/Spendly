@@ -14,6 +14,8 @@ import ExpenseList from './components/ExpenseList';
 import Dashboard from './components/Dashboard';
 import BudgetTracker from './components/BudgetTracker';
 import Analytics from './components/Analytics';
+import Profile from './components/Profile';
+import Settings from './components/Settings';
 
 function AppContent() {
   const [expenses, setExpenses] = useState([]);
@@ -207,7 +209,9 @@ function AppContent() {
               { id: 'add-expense', label: 'Add Expense', icon: '➕' },
               { id: 'expenses', label: 'All Expenses', icon: '📋' },
               { id: 'budget', label: 'Budget Tracker', icon: '🎯' },
-              { id: 'analytics', label: 'Analytics', icon: '📈' }
+              { id: 'analytics', label: 'Analytics', icon: '📈' },
+              { id: 'profile', label: 'Profile', icon: '👤' },
+              { id: 'settings', label: 'Settings', icon: '⚙️' }
             ].map((tab, index) => (
               <motion.button
                 key={tab.id}
@@ -315,6 +319,30 @@ function AppContent() {
               transition={{ duration: 0.5 }}
             >
               <Analytics expenses={expenses} />
+            </motion.div>
+          )}
+          
+          {activeTab === 'profile' && (
+            <motion.div
+              key="profile"
+              initial={{ opacity: 0, x: -100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 100 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Profile />
+            </motion.div>
+          )}
+          
+          {activeTab === 'settings' && (
+            <motion.div
+              key="settings"
+              initial={{ opacity: 0, x: -100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 100 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Settings />
             </motion.div>
           )}
         </AnimatePresence>
